@@ -77,22 +77,22 @@ public class WorldGuardCommands {
         this.worldGuard = worldGuard;
     }
 
-    @Command(aliases = {"version"}, desc = "Get the WorldGuard version", max = 0)
+    @Command(aliases = {"version"}, desc = "Версия WorldGuard", max = 0)
     public void version(CommandContext args, Actor sender) throws CommandException {
-        sender.print("WorldGuard " + WorldGuard.getVersion());
+        sender.print("Версия WorldGuard " + WorldGuard.getVersion());
         sender.print("http://www.enginehub.org");
 
-        sender.printDebug("----------- Platforms -----------");
+        sender.printDebug("----------- Платформы -----------");
         sender.printDebug(String.format("* %s (%s)", worldGuard.getPlatform().getPlatformName(), worldGuard.getPlatform().getPlatformVersion()));
     }
 
-    @Command(aliases = {"reload"}, desc = "Reload WorldGuard configuration", max = 0)
+    @Command(aliases = {"reload"}, desc = "Перезагрузить конфигурацию WorldGuard", max = 0)
     @CommandPermissions({"worldguard.reload"})
     public void reload(CommandContext args, Actor sender) throws CommandException {
         // TODO: This is subject to a race condition, but at least other commands are not being processed concurrently
         List<Task<?>> tasks = WorldGuard.getInstance().getSupervisor().getTasks();
         if (!tasks.isEmpty()) {
-            throw new CommandException("There are currently pending tasks. Use /wg running to monitor these tasks first.");
+            throw new CommandException("В настоящее время существуют отложенные задачи. Сначала используйте /wg running для мониторинга этих задач.");
         }
         
         LoggerToChatHandler handler = null;
@@ -114,9 +114,9 @@ public class WorldGuardCommands {
             }
             WorldGuard.getInstance().getPlatform().getRegionContainer().reload();
             // WGBukkit.cleanCache();
-            sender.print("WorldGuard configuration reloaded.");
+            sender.print("Конфигурация WorldGuard перезагружена.");
         } catch (Throwable t) {
-            sender.printError("Error while reloading: " + t.getMessage());
+            sender.printError("Ошибка при перезагрузке: " + t.getMessage());
         } finally {
             if (minecraftLogger != null) {
                 minecraftLogger.removeHandler(handler);
@@ -124,7 +124,7 @@ public class WorldGuardCommands {
         }
     }
     
-    @Command(aliases = {"report"}, desc = "Writes a report on WorldGuard", flags = "p", max = 0)
+    @Command(aliases = {"report"}, desc = "Запись отчета о WorldGuard", flags = "p", max = 0)
     @CommandPermissions({"worldguard.report"})
     public void report(CommandContext args, final Actor sender) throws CommandException, AuthorizationException {
         ReportList report = new ReportList("Report");
@@ -139,9 +139,9 @@ public class WorldGuardCommands {
         try {
             File dest = new File(worldGuard.getPlatform().getConfigDir().toFile(), "report.txt");
             Files.write(result, dest, StandardCharsets.UTF_8);
-            sender.print("WorldGuard report written to " + dest.getAbsolutePath());
+            sender.print("WorldGuard отчет написан " + dest.getAbsolutePath());
         } catch (IOException e) {
-            throw new CommandException("Failed to write report: " + e.getMessage());
+            throw new CommandException("Не удалось написать отчет: " + e.getMessage());
         }
         
         if (args.hasFlag('p')) {

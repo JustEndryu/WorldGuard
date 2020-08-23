@@ -222,7 +222,7 @@ public final class WorldGuard {
         }
 
         if (p == null) {
-            version = "(unknown)";
+            version = "(неизвестно)";
         } else {
             version = p.getImplementationVersion();
 

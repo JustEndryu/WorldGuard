@@ -75,7 +75,7 @@ public abstract class ProtectedRegion implements ChangeTracked, Comparable<Prote
         checkNotNull(id);
 
         if (!isValidId(id)) {
-            throw new IllegalArgumentException("Invalid region ID: " + id);
+            throw new IllegalArgumentException("Неверный ID региона: " + id);
         }
 
         this.id = Normal.normalize(id);
@@ -724,7 +724,7 @@ public abstract class ProtectedRegion implements ChangeTracked, Comparable<Prote
     public String toString() {
         return "ProtectedRegion{" +
                 "id='" + id + "', " +
-                "type='" + getType() + '\'' +
+                "тип='" + getType() + '\'' +
                 '}';
     }
 

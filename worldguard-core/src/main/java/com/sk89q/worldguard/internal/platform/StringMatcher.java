@@ -73,7 +73,7 @@ public interface StringMatcher {
     default Iterable<? extends LocalPlayer> checkPlayerMatch(List<? extends LocalPlayer> players) throws CommandException {
         // Check to see if there were any matches
         if (players.isEmpty()) {
-            throw new CommandException("Нет игроков, соответствующих запросу.");
+            throw new CommandException("Ни один игрок не соответствует запросу.");
         }
 
         return players;

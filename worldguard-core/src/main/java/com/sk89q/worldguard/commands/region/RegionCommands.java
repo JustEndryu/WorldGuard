@@ -644,7 +644,7 @@ public final class RegionCommands extends RegionCommandsBase {
         ProtectedRegion region;
         if (args.argsLength() == 0) { // Get region from where the player is
             if (!(sender instanceof LocalPlayer)) {
-                throw new CommandException("Пожалуйста, укажите регион с помощью команды /region info -w название_мира имя_региона.);
+                throw new CommandException("Пожалуйста, укажите регион с помощью команды /region flags -w название_мира имя_региона.");
             }
 
             region = checkRegionStandingIn(manager, (LocalPlayer) sender, true,
@@ -708,7 +708,7 @@ public final class RegionCommands extends RegionCommandsBase {
 
         existing.setPriority(priority);
 
-        sender.print("Приоритет региона '" + existing.getId() + "'  установлен на " + priority + " (более высокие числа имеют приоритет выше).");
+        sender.print("Приоритет региона '" + existing.getId() + "' установлен на " + priority + " (более высокие числа имеют приоритет выше).");
         checkSpawnOverlap(sender, world, existing);
     }
 
@@ -753,7 +753,7 @@ public final class RegionCommands extends RegionCommandsBase {
             // Tell the user what's wrong
             RegionPrintoutBuilder printout = new RegionPrintoutBuilder(world.getName(), parent, null, sender);
             assert parent != null;
-            printout.append(ErrorFormat.wrap("Регион '", parent.getId(), "' уже является родительским регионом региона '", child.getId(),
+            printout.append(ErrorFormat.wrap("Регион '", parent.getId(), "' уже является родительским регионом, региона '", child.getId(),
                     "', это призведет к зацикливанию.")).newline();
             printout.append(SubtleFormat.wrap("(Текущее родительские регионы '", parent.getId(), "':")).newline();
             printout.appendParentTree(true);
@@ -855,7 +855,7 @@ public final class RegionCommands extends RegionCommandsBase {
             RegionManager manager = checkRegionManager(world);
 
             if (manager == null) {
-                throw new CommandException("Для мира '" + world.getName() + "'нет менеджера регионов.");
+                throw new CommandException("Для мира '" + world.getName() + "' нет менеджера регионов.");
             }
 
             final String description = String.format("Загрузка области данных для мира '%s'.", world.getName());
@@ -1119,7 +1119,7 @@ public final class RegionCommands extends RegionCommandsBase {
 
         player.teleport(teleportLocation,
                 message.replace("%id%", existing.getId()),
-                "Телепортация в регион '" + existing.getId() + "'.");
+                "Невозможно телепортироваться в регион '" + existing.getId() + "'.");
     }
 
     @Command(aliases = {"toggle-bypass", "bypass"},

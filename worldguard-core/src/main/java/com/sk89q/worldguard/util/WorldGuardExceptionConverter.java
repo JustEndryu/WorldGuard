@@ -49,7 +49,7 @@ public class WorldGuardExceptionConverter extends ExceptionConverterHelper {
 
         if (matcher.matches()) {
             throw newCommandException("Ожидаемое количество; строка \"" + matcher.group(1)
-                    + "\" given.", e);
+                    + "\" получено.", e);
         } else {
             throw newCommandException("Ожидаемое количество; заданная строка.", e);
         }

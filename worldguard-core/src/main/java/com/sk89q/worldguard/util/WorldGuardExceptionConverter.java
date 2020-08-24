@@ -48,7 +48,7 @@ public class WorldGuardExceptionConverter extends ExceptionConverterHelper {
         final Matcher matcher = numberFormat.matcher(e.getMessage());
 
         if (matcher.matches()) {
-            throw newCommandException("NОжидаемое количество; строка \"" + matcher.group(1)
+            throw newCommandException("Ожидаемое количество; строка \"" + matcher.group(1)
                     + "\" given.", e);
         } else {
             throw newCommandException("Ожидаемое количество; заданная строка.", e);
@@ -73,12 +73,12 @@ public class WorldGuardExceptionConverter extends ExceptionConverterHelper {
 
     @ExceptionMatch
     public void convert(CancellationException e) throws CommandException {
-        throw newCommandException("WorldGuard: Задача была отменена.", e);
+        throw newCommandException("Задача была отменена.", e);
     }
 
     @ExceptionMatch
     public void convert(InterruptedException e) throws CommandException {
-        throw newCommandException("WorldGuard: Задача была прервана.", e);
+        throw newCommandException("Задача была отменена.", e);
     }
 
     @ExceptionMatch

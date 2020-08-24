@@ -108,7 +108,7 @@ class RegionCommandsBase {
             if (sender instanceof LocalPlayer) {
                 return ((LocalPlayer) sender).getWorld();
             } else {
-                throw new CommandException("Пожалуйста, укажите " + "название мира: " + flag + " world_name.");
+                throw new CommandException("Пожалуйста, укажите " + "название мира: " + flag + " название_мира.");
             }
         }
     }
@@ -380,7 +380,7 @@ class RegionCommandsBase {
             if (!spawn.getIntersectingRegions(ImmutableList.of(region)).isEmpty()) {
                 sender.print(ErrorFormat.wrap("Предупреждение!")
                         .append(TextComponent.of(" Этот регион перекрывает защиту спавна от ванили. WorldGuard не может " +
-                                "измените это, и только операторы сервера смогут взаимодействовать с этой областью.", TextColor.WHITE)));
+                                "обойти это, и только операторы сервера смогут взаимодействовать с этой областью.", TextColor.WHITE)));
                 return true;
             }
         }

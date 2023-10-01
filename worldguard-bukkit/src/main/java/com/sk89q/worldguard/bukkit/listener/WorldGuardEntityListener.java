@@ -836,7 +836,8 @@ public class WorldGuardEntityListener extends AbstractListener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onVehicleEnter(VehicleEnterEvent event) {
-        BukkitWorldConfiguration wcfg = getWorldConfig(event.getEntered().getWorld());
+        ConfigurationManager cfg = WorldGuard.getInstance().getPlatform().getGlobalStateManager();
+        WorldConfiguration wcfg = cfg.get(BukkitAdapter.adapt(event.getEntered().getWorld()));
 
         if (wcfg.blockEntityVehicleEntry && !(event.getEntered() instanceof Player)) {
             event.setCancelled(true);

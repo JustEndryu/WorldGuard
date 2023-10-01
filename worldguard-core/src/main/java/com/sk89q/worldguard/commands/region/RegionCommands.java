@@ -295,8 +295,8 @@ public final class RegionCommands extends RegionCommandsBase {
             }
         } else {
             if (wcfg.claimOnlyInsideExistingRegions) {
-                throw new CommandException("Вы можете приватить только внутри " +
-                        "существующих регионов, которые принадлежат вам или вашей группе.");
+                throw new CommandException("Вы можете создавать регионы только внутри " +
+                        "существующих, которые принадлежат вам или вашей группе.");
             }
         }
 
@@ -312,7 +312,7 @@ public final class RegionCommands extends RegionCommandsBase {
             }
 
             if (region.volume() > wcfg.maxClaimVolume) {
-                player.printError("Ты не можешь заприватить регион такого размера.");
+                player.printError("Ты не можешь создать регион такого размера.");
                 player.printError("Максимальный размер: " + wcfg.maxClaimVolume + ", размер твоего региона: " + region.volume());
                 return;
             }
@@ -329,6 +329,10 @@ public final class RegionCommands extends RegionCommandsBase {
                 }
             }
         }
+
+        RegionAdder task = new RegionAdder(manager, region);
+        task.setLocatorPolicy(UserLocatorPolicy.UUID_ONLY);
+        task.setOwnersInput(new String[]{player.getName()});
 
         region.getOwners().addPlayer(player);
         manager.addRegion(region);

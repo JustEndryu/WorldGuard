@@ -330,10 +330,6 @@ public final class RegionCommands extends RegionCommandsBase {
             }
         }
 
-        RegionAdder task = new RegionAdder(manager, region);
-        task.setLocatorPolicy(UserLocatorPolicy.UUID_ONLY);
-        task.setOwnersInput(new String[]{player.getName()});
-
         region.getOwners().addPlayer(player);
         manager.addRegion(region);
         player.print(TextComponent.of(String.format("Новый регион '%s' создан.", id)));

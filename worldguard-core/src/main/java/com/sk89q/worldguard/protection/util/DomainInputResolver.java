@@ -136,7 +136,7 @@ public class DomainInputResolver implements Callable<DefaultDomain> {
                 String domainName = customMatcher.group(1);
                 CustomDomain customDomain = WorldGuard.getInstance().getDomainRegistry().createDomain(domainName);
                 if (customDomain == null) {
-                    throw new InvalidDomainFormatException("No domain named '" + domainName + "' found.");
+                    throw new InvalidDomainFormatException("Домен с именем '" + domainName + "' не найден.");
                 }
                 customDomain.parseInput(CustomDomainContext.create()
                     .setSender(actor).setInput(customMatcher.group(2)).setObject("region", region).build());
@@ -169,14 +169,14 @@ public class DomainInputResolver implements Callable<DefaultDomain> {
                     domain.addPlayer(profile.getUniqueId());
                 }
             } catch (IOException e) {
-                throw new UnresolvedNamesException("The UUID lookup service failed so the names entered could not be turned into UUIDs");
+                throw new UnresolvedNamesException("Служба поиска UUID не удалась, поэтому введенные имена не могли быть превращены в UUIDs");
             } catch (InterruptedException e) {
-                throw new UnresolvedNamesException("UUID lookup was interrupted");
+                throw new UnresolvedNamesException("Поиск UUID был прерван");
             }
         }
 
         if (!namesToQuery.isEmpty()) {
-            throw new UnresolvedNamesException("Unable to resolve the names " + Joiner.on(", ").join(namesToQuery));
+            throw new UnresolvedNamesException("Невозможно разрешить имена " + Joiner.on(", ").join(namesToQuery));
         }
 
         return domain;

@@ -26,7 +26,9 @@ import javax.annotation.Nullable;
 
 /**
  * Stores an entity type.
+ * @deprecated replaced by {@link RegistryFlag<EntityType>}, will be removed in WorldGuard 8
  */
+@Deprecated
 public class EntityTypeFlag extends Flag<EntityType> {
 
     protected EntityTypeFlag(String name, @Nullable RegionGroup defaultGroup) {
@@ -38,12 +40,12 @@ public class EntityTypeFlag extends Flag<EntityType> {
     }
 
     @Override
-    public EntityType parseInput(FlagContext context) throws InvalidFlagFormat {
+    public EntityType parseInput(FlagContext context) throws InvalidFlagFormatException {
         String input = context.getUserInput();
         input = input.trim();
         EntityType entityType = unmarshal(input);
         if (entityType == null) {
-            throw new InvalidFlagFormat("Неизвестный тип сущности: " + input);
+            throw new InvalidFlagFormatException("Неизвестный тип сущности: " + input);
         }
         return entityType;
     }

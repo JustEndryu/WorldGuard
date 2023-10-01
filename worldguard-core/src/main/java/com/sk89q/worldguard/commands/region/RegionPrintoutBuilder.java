@@ -36,6 +36,8 @@ import com.sk89q.worldedit.util.formatting.text.format.TextColor;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.domains.DefaultDomain;
 import com.sk89q.worldguard.internal.permission.RegionPermissionModel;
+import com.sk89q.worldguard.protection.FlagValueCalculator;
+import com.sk89q.worldguard.protection.association.RegionAssociable;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.protection.flags.RegionGroupFlag;
@@ -317,7 +319,7 @@ public class RegionPrintoutBuilder implements Callable<TextComponent> {
         builder.append(bound);
         builder.append(TextComponent.of("\n§aРазмер: §e" + region.volume()));
         builder.append(TextComponent.of("\n§7▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"));
-        final Location teleFlag = region.getFlag(Flags.TELE_LOC);
+        final Location teleFlag = FlagValueCalculator.getEffectiveFlagOf(region, Flags.TELE_LOC, perms != null && perms.getSender() instanceof RegionAssociable ? (RegionAssociable) perms.getSender() : null);
         if (teleFlag != null && perms != null && perms.mayTeleportTo(region)) {
             builder.append(TextComponent.space().append(TextComponent.of("[Телепортация]", TextColor.GRAY)
                     .hoverEvent(HoverEvent.of(HoverEvent.Action.SHOW_TEXT,
@@ -327,6 +329,12 @@ public class RegionPrintoutBuilder implements Callable<TextComponent> {
                                             + teleFlag.getBlockZ()))))
                     .clickEvent(ClickEvent.of(ClickEvent.Action.RUN_COMMAND,
                             "/rg tp -w \"" + world + "\" " + region.getId()))));
+        } else if (perms != null && perms.mayTeleportToCenter(region) && region.isPhysicalArea()) {
+            builder.append(TextComponent.space().append(TextComponent.of("[Center Teleport]", TextColor.GRAY)
+                    .hoverEvent(HoverEvent.of(HoverEvent.Action.SHOW_TEXT,
+                            TextComponent.of("Click to teleport to the center of the region")))
+                    .clickEvent(ClickEvent.of(ClickEvent.Action.RUN_COMMAND,
+                            "/rg tp -c -w \"" + world + "\" " + region.getId()))));
         }
 
         newline();

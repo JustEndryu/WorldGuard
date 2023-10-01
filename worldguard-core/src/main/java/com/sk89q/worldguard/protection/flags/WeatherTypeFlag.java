@@ -24,6 +24,11 @@ import com.sk89q.worldedit.world.weather.WeatherTypes;
 
 import javax.annotation.Nullable;
 
+/**
+ * Stores an weather type.
+ * @deprecated replaced by {@link RegistryFlag<WeatherType>}, will be removed in WorldGuard 8
+ */
+@Deprecated
 public class WeatherTypeFlag extends Flag<WeatherType> {
 
     protected WeatherTypeFlag(String name, @Nullable RegionGroup defaultGroup) {
@@ -35,12 +40,12 @@ public class WeatherTypeFlag extends Flag<WeatherType> {
     }
 
     @Override
-    public WeatherType parseInput(FlagContext context) throws InvalidFlagFormat {
+    public WeatherType parseInput(FlagContext context) throws InvalidFlagFormatException {
         String input = context.getUserInput();
         input = input.trim();
         WeatherType weatherType = unmarshal(input);
         if (weatherType == null) {
-            throw new InvalidFlagFormat("Неизвестный тип погоды: " + input);
+            throw new InvalidFlagFormatException("Неизвестный тип погоды: " + input);
         }
         return weatherType;
     }

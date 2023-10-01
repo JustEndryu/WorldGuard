@@ -25,6 +25,8 @@ import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Stores a key value map of typed {@link Flag}s.
  */
@@ -35,12 +37,16 @@ public class MapFlag<K, V> extends Flag<Map<K, V>> {
 
     public MapFlag(final String name, final Flag<K> keyFlag, final Flag<V> valueFlag) {
         super(name);
+        requireNonNull(keyFlag, "keyFlag cannot be null.");
+        requireNonNull(valueFlag, "valueFlag cannot be null.");
         this.keyFlag = keyFlag;
         this.valueFlag = valueFlag;
     }
 
     public MapFlag(final String name, @Nullable final RegionGroup defaultGroup, final Flag<K> keyFlag, final Flag<V> valueFlag) {
         super(name, defaultGroup);
+        requireNonNull(keyFlag, "keyFlag cannot be null.");
+        requireNonNull(valueFlag, "valueFlag cannot be null.");
         this.keyFlag = keyFlag;
         this.valueFlag = valueFlag;
     }
@@ -64,7 +70,7 @@ public class MapFlag<K, V> extends Flag<Map<K, V>> {
     }
 
     @Override
-    public Map<K, V> parseInput(final FlagContext context) throws InvalidFlagFormat {
+    public Map<K, V> parseInput(final FlagContext context) throws InvalidFlagFormatException {
 
         final String input = context.getUserInput();
         if (input.isEmpty()) {
@@ -77,7 +83,7 @@ public class MapFlag<K, V> extends Flag<Map<K, V>> {
             final char split = str.indexOf('=') == -1 ? ':' : '=';
             final String[] keyVal = str.split(String.valueOf(split));
             if (keyVal.length != 2) {
-                throw new InvalidFlagFormat("Входные данные должны быть в формате 'key:value,key1=value1'. Можно использовать ':' или '='.");
+                throw new InvalidFlagFormatException("Входные данные должны быть в формате 'key:value,key1=value1'. Можно использовать ':' или '='.");
             }
 
             final FlagContext key = context.copyWith(null, keyVal[0], null);

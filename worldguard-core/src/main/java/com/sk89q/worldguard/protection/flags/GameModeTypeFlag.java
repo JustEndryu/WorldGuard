@@ -24,6 +24,11 @@ import com.sk89q.worldedit.world.gamemode.GameModes;
 
 import javax.annotation.Nullable;
 
+/**
+ * Stores an gamemode type.
+ * @deprecated replaced by {@link RegistryFlag<GameMode>}, will be removed in WorldGuard 8
+ */
+@Deprecated
 public class GameModeTypeFlag extends Flag<GameMode> {
 
     protected GameModeTypeFlag(String name, @Nullable RegionGroup defaultGroup) {
@@ -35,12 +40,12 @@ public class GameModeTypeFlag extends Flag<GameMode> {
     }
 
     @Override
-    public GameMode parseInput(FlagContext context) throws InvalidFlagFormat {
+    public GameMode parseInput(FlagContext context) throws InvalidFlagFormatException {
         String input = context.getUserInput();
         input = input.trim();
         GameMode gamemode = unmarshal(input);
         if (gamemode == null) {
-            throw new InvalidFlagFormat("Неизвестный режим игры: " + input);
+            throw new InvalidFlagFormatException("Неизвестный режим игры: " + input);
         }
         return gamemode;
     }

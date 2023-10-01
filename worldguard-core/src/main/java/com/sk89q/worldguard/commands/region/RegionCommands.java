@@ -21,16 +21,17 @@ package com.sk89q.worldguard.commands.region;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import com.sk89q.minecraft.util.commands.Command;
 import com.sk89q.minecraft.util.commands.CommandContext;
 import com.sk89q.minecraft.util.commands.CommandException;
-import com.sk89q.minecraft.util.commands.CommandPermissions;
 import com.sk89q.minecraft.util.commands.CommandPermissionsException;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.command.util.AsyncCommandBuilder;
 import com.sk89q.worldedit.extension.platform.Actor;
 import com.sk89q.worldedit.extension.platform.Capability;
+import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldedit.util.formatting.component.ErrorFormat;
 import com.sk89q.worldedit.util.formatting.component.LabelFormat;
@@ -42,6 +43,7 @@ import com.sk89q.worldedit.util.formatting.text.event.HoverEvent;
 import com.sk89q.worldedit.util.formatting.text.format.TextColor;
 import com.sk89q.worldedit.util.formatting.text.format.TextDecoration;
 import com.sk89q.worldedit.world.World;
+import com.sk89q.worldedit.world.gamemode.GameModes;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.commands.task.RegionAdder;
@@ -53,10 +55,11 @@ import com.sk89q.worldguard.config.ConfigurationManager;
 import com.sk89q.worldguard.config.WorldConfiguration;
 import com.sk89q.worldguard.internal.permission.RegionPermissionModel;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.FlagValueCalculator;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.FlagContext;
 import com.sk89q.worldguard.protection.flags.Flags;
-import com.sk89q.worldguard.protection.flags.InvalidFlagFormat;
+import com.sk89q.worldguard.protection.flags.InvalidFlagFormatException;
 import com.sk89q.worldguard.protection.flags.RegionGroup;
 import com.sk89q.worldguard.protection.flags.RegionGroupFlag;
 import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
@@ -65,6 +68,7 @@ import com.sk89q.worldguard.protection.managers.RemovalStrategy;
 import com.sk89q.worldguard.protection.managers.migration.DriverMigration;
 import com.sk89q.worldguard.protection.managers.migration.MigrationException;
 import com.sk89q.worldguard.protection.managers.migration.UUIDMigration;
+import com.sk89q.worldguard.protection.managers.migration.WorldHeightMigration;
 import com.sk89q.worldguard.protection.managers.storage.DriverType;
 import com.sk89q.worldguard.protection.managers.storage.RegionDriver;
 import com.sk89q.worldguard.protection.regions.GlobalProtectedRegion;
@@ -73,6 +77,7 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion.CircularInheritanceException;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldguard.protection.util.DomainInputResolver.UserLocatorPolicy;
+import com.sk89q.worldguard.protection.util.WorldEditRegionConverter;
 import com.sk89q.worldguard.session.Session;
 import com.sk89q.worldguard.util.Enums;
 import com.sk89q.worldguard.util.logging.LoggerToChatHandler;
@@ -155,7 +160,7 @@ public final class RegionCommands extends RegionCommandsBase {
             region = checkRegionFromSelection(sender, id);
         }
 
-        RegionAdder task = new RegionAdder(manager, region);
+        RegionAdder task = new RegionAdder(manager, region, sender);
         task.addOwnersFromCommand(args, 2);
 
         final String description = String.format("Добавление региона '%s'", region.getId());
@@ -209,7 +214,7 @@ public final class RegionCommands extends RegionCommandsBase {
 
         region.copyFrom(existing);
 
-        RegionAdder task = new RegionAdder(manager, region);
+        RegionAdder task = new RegionAdder(manager, region, sender);
 
         final String description = String.format("Обновление региона '%s'", region.getId());
         AsyncCommandBuilder.wrap(task, sender)
@@ -280,7 +285,7 @@ public final class RegionCommands extends RegionCommandsBase {
             }
         }
 
-        // We have to check whether this region violates the space of any other reion
+        // We have to check whether this region violates the space of any other region
         ApplicableRegionSet regions = manager.getApplicableRegions(region);
 
         // Check if this region overlaps any other region
@@ -313,17 +318,21 @@ public final class RegionCommands extends RegionCommandsBase {
             }
         }
 
-        RegionAdder task = new RegionAdder(manager, region);
-        task.setLocatorPolicy(UserLocatorPolicy.UUID_ONLY);
-        task.setOwnersInput(new String[]{player.getName()});
+        // Inherit from a template region
+        if (!Strings.isNullOrEmpty(wcfg.setParentOnClaim)) {
+            ProtectedRegion templateRegion = manager.getRegion(wcfg.setParentOnClaim);
+            if (templateRegion != null) {
+                try {
+                    region.setParent(templateRegion);
+                } catch (CircularInheritanceException e) {
+                    throw new CommandException(e.getMessage());
+                }
+            }
+        }
 
-        final String description = String.format("Создание региона '%s'", id);
-        AsyncCommandBuilder.wrap(task, sender)
-                .registerWithSupervisor(WorldGuard.getInstance().getSupervisor(), description)
-                .sendMessageAfterDelay("(Пожалуйста, подождите... " + description + ")")
-                .onSuccess(TextComponent.of(String.format("Новый регион '%s' создан.", id)), null)
-                .onFailure("Не удалось создать регион", WorldGuard.getInstance().getExceptionConverter())
-                .buildAndExec(WorldGuard.getInstance().getExecutorService());
+        region.getOwners().addPlayer(player);
+        manager.addRegion(region);
+        player.print(TextComponent.of(String.format("Новый регион '%s' создан.", id)));
     }
 
     /**
@@ -435,9 +444,9 @@ public final class RegionCommands extends RegionCommandsBase {
      * @throws CommandException any error
      */
     @Command(aliases = {"list"},
-             usage = "[страница]",
+             usage = "[-w мир] [-p владелец [-n]] [-s] [-i фильтр] [страница]",
              desc = "Показать список всех регионов",
-             flags = "np:w:",
+             flags = "np:w:i:s",
              max = 1)
     public void list(CommandContext args, Actor sender) throws CommandException {
         warnAboutSaveFailures(sender);
@@ -472,6 +481,16 @@ public final class RegionCommands extends RegionCommandsBase {
         task.setPage(page);
         if (ownedBy != null) {
             task.filterOwnedByName(ownedBy, args.hasFlag('n'));
+        }
+
+        if (args.hasFlag('s')) {
+            ProtectedRegion existing = checkRegionFromSelection(sender, "tmp");
+            task.filterByIntersecting(existing);
+        }
+
+        // -i string is in region id
+        if (args.hasFlag('i')) {
+            task.filterIdByMatch(args.getFlag('i'));
         }
 
         AsyncCommandBuilder.wrap(task, sender)
@@ -568,7 +587,7 @@ public final class RegionCommands extends RegionCommandsBase {
             // the [value] part throws an error.
             try {
                 groupValue = groupFlag.parseInput(FlagContext.create().setSender(sender).setInput(group).setObject("region", existing).build());
-            } catch (InvalidFlagFormat e) {
+            } catch (InvalidFlagFormatException e) {
                 throw new CommandException(e.getMessage());
             }
 
@@ -579,7 +598,7 @@ public final class RegionCommands extends RegionCommandsBase {
             // Set the flag if [value] was given even if [-g group] was given as well
             try {
                 value = setFlag(existing, foundFlag, sender, value).toString();
-            } catch (InvalidFlagFormat e) {
+            } catch (InvalidFlagFormatException e) {
                 throw new CommandException(e.getMessage());
             }
 
@@ -1067,6 +1086,62 @@ public final class RegionCommands extends RegionCommandsBase {
         }
     }
 
+
+    /**
+     * Migrate regions that went from 0-255 to new world heights.
+     *
+     * @param args the arguments
+     * @param sender the sender
+     * @throws CommandException any error
+     */
+    @Command(aliases = {"migrateheights"},
+            usage = "[world]", max = 1,
+            flags = "yw:",
+            desc = "Migrate regions from old height limits to new height limits")
+    public void migrateHeights(CommandContext args, Actor sender) throws CommandException {
+        // Check permissions
+        if (!getPermissionModel(sender).mayMigrateRegionHeights()) {
+            throw new CommandPermissionsException();
+        }
+
+        if (!args.hasFlag('y')) {
+            throw new CommandException("This command is potentially dangerous.\n" +
+                    "Please ensure you have made a backup of your data, and then re-enter the command with -y tacked on at the end to proceed.");
+        }
+
+        World world = null;
+        try {
+            world = checkWorld(args, sender, 'w');
+        } catch (CommandException ignored) {
+        }
+
+        LoggerToChatHandler handler = null;
+        Logger minecraftLogger = null;
+
+        if (sender instanceof LocalPlayer) {
+            handler = new LoggerToChatHandler(sender);
+            handler.setLevel(Level.ALL);
+            minecraftLogger = Logger.getLogger("com.sk89q.worldguard");
+            minecraftLogger.addHandler(handler);
+        }
+
+        try {
+            RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+            RegionDriver driver = container.getDriver();
+            WorldHeightMigration migration = new WorldHeightMigration(driver, WorldGuard.getInstance().getFlagRegistry(), world);
+            container.migrate(migration);
+            sender.print("Migration complete!");
+        } catch (MigrationException e) {
+            log.log(Level.WARNING, "Failed to migrate", e);
+            throw new CommandException("Error encountered while migrating: " + e.getMessage());
+        } finally {
+            if (minecraftLogger != null) {
+                minecraftLogger.removeHandler(handler);
+            }
+        }
+    }
+
+
     /**
      * Teleport to a region
      * 
@@ -1075,8 +1150,8 @@ public final class RegionCommands extends RegionCommandsBase {
      * @throws CommandException any error
      */
     @Command(aliases = {"teleport", "tp"},
-             usage = "<id>",
-             flags = "sw:",
+             usage = "[-w мир] [-c|s] <id>",
+             flags = "csw:",
              desc = "Телепортироваться на заданную точку в регионе.",
              min = 1, max = 1)
     public void teleport(CommandContext args, Actor sender) throws CommandException {
@@ -1095,21 +1170,38 @@ public final class RegionCommands extends RegionCommandsBase {
 
         // -s for spawn location
         if (args.hasFlag('s')) {
-            teleportLocation = existing.getFlag(Flags.SPAWN_LOC);
+            teleportLocation = FlagValueCalculator.getEffectiveFlagOf(existing, Flags.SPAWN_LOC, player);
             
             if (teleportLocation == null) {
                 throw new CommandException(
-                        "В данном регионе нет точки спавна.");
+                        "В данном регионе нет точки появления.");
+            }
+        } else if (args.hasFlag('c')) {
+            // Check permissions
+            if (!getPermissionModel(player).mayTeleportToCenter(existing)) {
+                throw new CommandPermissionsException();
+            }
+            Region region = WorldEditRegionConverter.convertToRegion(existing);
+            if (region == null || region.getCenter() == null) {
+                throw new CommandException("В регионе нет центральной точки появления.");
+            }
+            if (player.getGameMode() == GameModes.SPECTATOR) {
+                teleportLocation = new Location(world, region.getCenter(), 0, 0);
+            } else {
+                // TODO: Add some method to create a safe teleport location.
+                // The method AbstractPlayerActor$findFreePoisition(Location loc) is no good way for this.
+                // It doesn't return the found location and it can't be checked if the location is inside the region.
+                throw new CommandException("Center teleport is only available in Spectator gamemode.");
             }
         } else {
-            teleportLocation = existing.getFlag(Flags.TELE_LOC);
+            teleportLocation = FlagValueCalculator.getEffectiveFlagOf(existing, Flags.TELE_LOC, player);
             
             if (teleportLocation == null) {
                 throw new CommandException("В данном регионе нет точки телепорта.");
             }
         }
 
-        String message = existing.getFlag(Flags.TELE_MESSAGE);
+        String message = FlagValueCalculator.getEffectiveFlagOf(existing, Flags.TELE_MESSAGE, player);
 
         // If the flag isn't set, use the default message
         // If message.isEmpty(), no message is sent by LocalPlayer#teleport(...)
@@ -1123,12 +1215,25 @@ public final class RegionCommands extends RegionCommandsBase {
     }
 
     @Command(aliases = {"toggle-bypass", "bypass"},
+             usage = "[on|off]",
              desc = "Переключить обход защиты региона, игнорируя разрешение обхода.")
-    @CommandPermissions({"worldguard.region.toggle-bypass"})
     public void toggleBypass(CommandContext args, Actor sender) throws CommandException {
         LocalPlayer player = worldGuard.checkPlayer(sender);
+        if (!player.hasPermission("worldguard.region.toggle-bypass")) {
+            throw new CommandPermissionsException();
+        }
         Session session = WorldGuard.getInstance().getPlatform().getSessionManager().get(player);
-        if (session.hasBypassDisabled()) {
+        boolean shouldEnableBypass;
+        if (args.argsLength() > 0) {
+            String arg1 = args.getString(0);
+            if (!arg1.equalsIgnoreCase("on") && !arg1.equalsIgnoreCase("off")) {
+                throw new CommandException("Разрешенные дополнительные аргументы: on, off");
+            }
+            shouldEnableBypass = arg1.equalsIgnoreCase("on");
+        } else {
+            shouldEnableBypass = session.hasBypassDisabled();
+        }
+        if (shouldEnableBypass) {
             session.setBypassDisabled(false);
             player.print("Теперь вы можете обойти защиту региона (до тех пор, пока у вас есть разрешение).");
         } else {

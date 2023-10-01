@@ -26,24 +26,28 @@ import javax.annotation.Nullable;
 import java.util.Locale;
 import java.util.Optional;
 
+import static java.util.Objects.requireNonNull;
+
 public class RegistryFlag<T extends Keyed> extends Flag<T> {
     private final Registry<T> registry;
 
     public RegistryFlag(String name, Registry<T> registry) {
         super(name);
+        requireNonNull(registry, "registry cannot be null.");
         this.registry = registry;
     }
 
     public RegistryFlag(String name, @Nullable RegionGroup defaultGroup, Registry<T> registry) {
         super(name, defaultGroup);
+        requireNonNull(registry, "registry cannot be null.");
         this.registry = registry;
     }
 
     @Override
-    public T parseInput(FlagContext context) throws InvalidFlagFormat {
+    public T parseInput(FlagContext context) throws InvalidFlagFormatException {
         final String key = context.getUserInput().trim().toLowerCase(Locale.ROOT);
         return Optional.ofNullable(registry.get(key))
-                .orElseThrow(() -> new InvalidFlagFormat("Неизвестно " + registry.getName() + ": " + key));
+                .orElseThrow(() -> new InvalidFlagFormatException("Неизвестно " + registry.getName() + ": " + key));
     }
 
     public Registry<T> getRegistry() {

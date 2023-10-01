@@ -36,6 +36,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +54,7 @@ public class DefaultDomain implements Domain, ChangeTracked {
     private PlayerDomain playerDomain = new PlayerDomain();
     private GroupDomain groupDomain = new GroupDomain();
 
-    private final Map<String, CustomDomain> customDomains = new ConcurrentHashMap<>();
+    private Set<CustomDomain> customDomains = new HashSet<>();
     private boolean customDomainsChanged = false;
 
     /**
@@ -70,7 +71,7 @@ public class DefaultDomain implements Domain, ChangeTracked {
     public DefaultDomain(DefaultDomain existing) {
         setPlayerDomain(existing.getPlayerDomain());
         setGroupDomain(existing.getGroupDomain());
-        setCustomDomains(existing.customDomains);
+        setCustomDomains(existing.getCustomDomains());
     }
 
     /**
@@ -118,8 +119,9 @@ public class DefaultDomain implements Domain, ChangeTracked {
      */
     public void addCustomDomain(CustomDomain customDomain) {
         checkNotNull(customDomain);
-        this.customDomains.put(customDomain.getName(), customDomain);
-        this.customDomainsChanged = true;
+        removeCustomDomain(customDomain.getName());
+        this.customDomains.add(customDomain);
+        customDomainsChanged = true;
     }
 
     /**
@@ -129,8 +131,8 @@ public class DefaultDomain implements Domain, ChangeTracked {
      */
     public void removeCustomDomain(String name) {
         checkNotNull(name);
-        if (this.customDomains.remove(name) != null) {
-            this.customDomainsChanged = true;
+        if (this.customDomains.removeIf(d -> d.getName().equalsIgnoreCase(name))) {
+            customDomainsChanged = true;
         }
     }
 
@@ -141,8 +143,8 @@ public class DefaultDomain implements Domain, ChangeTracked {
      */
     public void removeCustomDomain(CustomDomain customDomain) {
         checkNotNull(customDomain);
-        if (this.customDomains.remove(customDomain.getName()) != null) {
-            this.customDomainsChanged = true;
+        if (this.customDomains.remove(customDomain)) {
+            customDomainsChanged = true;
         }
     }
 
@@ -151,11 +153,10 @@ public class DefaultDomain implements Domain, ChangeTracked {
      *
      * @param customDomains the domains
      */
-    public void setCustomDomains(Map<String, CustomDomain> customDomains) {
+    public void setCustomDomains(Collection<CustomDomain> customDomains) {
         checkNotNull(customDomains);
-        this.customDomains.clear();
-        this.customDomains.putAll(customDomains);
-        this.customDomainsChanged = true;
+        this.customDomains = new HashSet<>(customDomains);
+        customDomainsChanged = true;
     }
 
     /**
@@ -163,18 +164,8 @@ public class DefaultDomain implements Domain, ChangeTracked {
      *
      * @return a unmodifiable copy of the domains
      */
-    public Collection<CustomDomain> getCustomDomains() {
-        return Collections.unmodifiableCollection(this.customDomains.values());
-    }
-
-    /**
-     * Get the api domain specified by its name
-     *
-     * @param name the name of the domain
-     * @return the custom domain
-     */
-    public @Nullable CustomDomain getCustomDomain(String name) {
-        return this.customDomains.get(name);
+    public Set<CustomDomain> getCustomDomains() {
+        return Collections.unmodifiableSet(this.customDomains);
     }
 
     /**
@@ -321,12 +312,12 @@ public class DefaultDomain implements Domain, ChangeTracked {
 
     @Override
     public boolean contains(LocalPlayer player) {
-        return playerDomain.contains(player) || groupDomain.contains(player) || customDomains.values().stream().anyMatch(d -> d.contains(player));
+        return playerDomain.contains(player) || groupDomain.contains(player) || customDomains.stream().anyMatch(d -> d.contains(player));
     }
 
     @Override
     public boolean contains(UUID uniqueId) {
-        return playerDomain.contains(uniqueId) || customDomains.values().stream().anyMatch(d -> d.contains(uniqueId));
+        return playerDomain.contains(uniqueId) || customDomains.stream().anyMatch(d -> d.contains(uniqueId));
     }
 
     @Override
@@ -394,7 +385,7 @@ public class DefaultDomain implements Domain, ChangeTracked {
 
     public String toCustomDomainsString() {
         List<String> output = new ArrayList<>();
-        for (CustomDomain customDomain : customDomains.values()) {
+        for (CustomDomain customDomain : customDomains) {
             output.add(customDomain.getName() + ":" + customDomain.toString());
         }
         output.sort(String.CASE_INSENSITIVE_ORDER);
@@ -523,7 +514,7 @@ public class DefaultDomain implements Domain, ChangeTracked {
 
     private Component toCustomDomainsComponent() {
         final TextComponent.Builder builder = TextComponent.builder("");
-        for (Iterator<CustomDomain> it = customDomains.values().iterator(); it.hasNext(); ) {
+        for (Iterator<CustomDomain> it = customDomains.iterator(); it.hasNext(); ) {
             CustomDomain domain = it.next();
             builder.append(TextComponent.of(domain.getName() + ":", TextColor.LIGHT_PURPLE))
                     .append(TextComponent.of(domain.toString(), TextColor.GOLD));
@@ -538,7 +529,7 @@ public class DefaultDomain implements Domain, ChangeTracked {
     @Override
     public boolean isDirty() {
         return playerDomain.isDirty() || groupDomain.isDirty() ||
-                customDomainsChanged ||  customDomains.values().stream().anyMatch(ChangeTracked::isDirty);
+                customDomainsChanged ||  customDomains.stream().anyMatch(ChangeTracked::isDirty);
     }
 
     @Override
@@ -546,7 +537,7 @@ public class DefaultDomain implements Domain, ChangeTracked {
         playerDomain.setDirty(dirty);
         groupDomain.setDirty(dirty);
         customDomainsChanged = dirty;
-        customDomains.values().forEach(d -> d.setDirty(dirty));
+        customDomains.forEach(d -> d.setDirty(dirty));
     }
 
     @Override

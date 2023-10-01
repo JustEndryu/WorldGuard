@@ -1143,6 +1143,61 @@ public final class RegionCommands extends RegionCommandsBase {
 
 
     /**
+     * Migrate regions that went from 0-255 to new world heights.
+     *
+     * @param args the arguments
+     * @param sender the sender
+     * @throws CommandException any error
+     */
+    @Command(aliases = {"migrateheights"},
+            usage = "[world]", max = 1,
+            flags = "yw:",
+            desc = "Миграция региона от ограничений старой высоты в новые пределы высоты")
+    public void migrateHeights(CommandContext args, Actor sender) throws CommandException {
+        // Check permissions
+        if (!getPermissionModel(sender).mayMigrateRegionHeights()) {
+            throw new CommandPermissionsException();
+        }
+
+        if (!args.hasFlag('y')) {
+            throw new CommandException("Эта команда потенциально опасна.\n" +
+                    "Пожалуйста, убедитесь, что вы сделали резервную копию ваших данных, а затем снова введите команду с -y чтобы завершить этот процесс.");
+        }
+
+        World world = null;
+        try {
+            world = checkWorld(args, sender, 'w');
+        } catch (CommandException ignored) {
+        }
+
+        LoggerToChatHandler handler = null;
+        Logger minecraftLogger = null;
+
+        if (sender instanceof LocalPlayer) {
+            handler = new LoggerToChatHandler(sender);
+            handler.setLevel(Level.ALL);
+            minecraftLogger = Logger.getLogger("com.sk89q.worldguard");
+            minecraftLogger.addHandler(handler);
+        }
+
+        try {
+            RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+            RegionDriver driver = container.getDriver();
+            WorldHeightMigration migration = new WorldHeightMigration(driver, WorldGuard.getInstance().getFlagRegistry(), world);
+            container.migrate(migration);
+            sender.print("Миграция завершена!");
+        } catch (MigrationException e) {
+            log.log(Level.WARNING, "Не удалось мигрировать", e);
+            throw new CommandException("Ошибка которая обнаружена во время миграции: " + e.getMessage());
+        } finally {
+            if (minecraftLogger != null) {
+                minecraftLogger.removeHandler(handler);
+            }
+        }
+    }
+
+
+    /**
      * Teleport to a region
      * 
      * @param args the arguments
@@ -1191,7 +1246,7 @@ public final class RegionCommands extends RegionCommandsBase {
                 // TODO: Add some method to create a safe teleport location.
                 // The method AbstractPlayerActor$findFreePoisition(Location loc) is no good way for this.
                 // It doesn't return the found location and it can't be checked if the location is inside the region.
-                throw new CommandException("Center teleport is only available in Spectator gamemode.");
+                throw new CommandException("Телепорт в центр региона доступен только в режиме Наблюдателя.");
             }
         } else {
             teleportLocation = FlagValueCalculator.getEffectiveFlagOf(existing, Flags.TELE_LOC, player);

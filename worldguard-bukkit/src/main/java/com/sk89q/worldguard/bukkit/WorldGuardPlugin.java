@@ -20,6 +20,7 @@
 package com.sk89q.worldguard.bukkit;
 
 import com.google.common.collect.ImmutableList;
+import com.sk89q.bukkit.util.ClassSourceValidator;
 import com.sk89q.bukkit.util.CommandsManagerRegistration;
 import com.sk89q.minecraft.util.commands.CommandException;
 import com.sk89q.minecraft.util.commands.CommandPermissionsException;
@@ -154,6 +155,13 @@ public class WorldGuardPlugin extends JavaPlugin {
 
         // Set the proper command injector
         commands.setInjector(new SimpleInjector(WorldGuard.getInstance()));
+
+        // Catch bad things being done by naughty plugins that include WorldGuard's classes
+        try {
+            ClassSourceValidator verifier = new ClassSourceValidator(this);
+            verifier.reportMismatches(ImmutableList.of(WorldGuard.class, ProtectedRegion.class, Flag.class));
+        } catch (NoClassDefFoundError ignored) { // was added to WE two years ago but who knows
+        }
 
         // Register command classes
         final CommandsManagerRegistration reg = new CommandsManagerRegistration(this, commands);

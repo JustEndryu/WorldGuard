@@ -794,6 +794,27 @@ public final class Materials {
         MATERIAL_FLAGS.put(Material.HANGING_ROOTS, 0);
         MATERIAL_FLAGS.put(Material.POINTED_DRIPSTONE, 0);
 
+        // 1.19
+        MATERIAL_FLAGS.put(Material.MUD, 0);
+        MATERIAL_FLAGS.put(Material.MANGROVE_ROOTS, 0);
+        MATERIAL_FLAGS.put(Material.MUDDY_MANGROVE_ROOTS, 0);
+        MATERIAL_FLAGS.put(Material.PACKED_MUD, 0);
+        MATERIAL_FLAGS.put(Material.MUD_BRICKS, 0);
+        MATERIAL_FLAGS.put(Material.SCULK, 0);
+        MATERIAL_FLAGS.put(Material.SCULK_VEIN, 0);
+        MATERIAL_FLAGS.put(Material.SCULK_CATALYST, 0);
+        MATERIAL_FLAGS.put(Material.SCULK_SHRIEKER, 0);
+        MATERIAL_FLAGS.put(Material.TADPOLE_BUCKET, 0);
+        MATERIAL_FLAGS.put(Material.RECOVERY_COMPASS, 0);
+        MATERIAL_FLAGS.put(Material.DISC_FRAGMENT_5, 0);
+        MATERIAL_FLAGS.put(Material.GOAT_HORN, 0);
+        MATERIAL_FLAGS.put(Material.OCHRE_FROGLIGHT, 0);
+        MATERIAL_FLAGS.put(Material.VERDANT_FROGLIGHT, 0);
+        MATERIAL_FLAGS.put(Material.PEARLESCENT_FROGLIGHT, 0);
+        MATERIAL_FLAGS.put(Material.FROGSPAWN, 0);
+        MATERIAL_FLAGS.put(Material.ECHO_SHARD, 0);
+        MATERIAL_FLAGS.put(Material.REINFORCED_DEEPSLATE, 0);
+
         // Generated via tag
         for (Material woodenDoor : Tag.WOODEN_DOORS.getValues()) {
             MATERIAL_FLAGS.put(woodenDoor, MODIFIED_ON_RIGHT);
@@ -956,6 +977,7 @@ public final class Materials {
 //        DAMAGE_EFFECTS.add(PotionEffectType.DOLPHINS_GRACE);
         DAMAGE_EFFECTS.add(PotionEffectType.BAD_OMEN);
 //        DAMAGE_EFFECTS.add(PotionEffectType.HERO_OF_THE_VILLAGE);
+        DAMAGE_EFFECTS.add(PotionEffectType.DARKNESS);
     }
 
     private Materials() {
